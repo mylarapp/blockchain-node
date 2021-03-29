@@ -43,6 +43,8 @@ handle_rpc(<<"oracle_price_", _/binary>> = Method, Params) ->
     bn_oracle_price:handle_rpc(Method, Params);
 handle_rpc(<<"info", _/binary>> = Method, Params) ->
     bn_info:handle_rpc(Method, Params);
+handle_rpc(<<"peer", _/binary>> = Method, Params) ->
+    bn_peer:handle_rpc(Method, Params);
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).
 

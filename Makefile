@@ -6,6 +6,7 @@ PKG_NAME_VER=${SHORTSHA}
 
 OS_NAME=$(shell uname -s)
 PROFILE := dev
+NETWORK := mainnet
 
 ifeq (${OS_NAME},FreeBSD)
 make="gmake"
@@ -45,6 +46,9 @@ release:
 start:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node start
 
+foreground:
+	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node foreground
+
 stop:
 	-./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node stop
 
@@ -52,22 +56,22 @@ console:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node remote_console
 
 docker-build:
-	docker build -t helium/node .
-
-docker-clean: docker-stop
-	docker rm node
-
-docker-start:
-	mkdir -p $(HOME)/node_data
-	docker run -d --init \
-	--publish 2154:2154/tcp \
-	--publish 4467:4467 \
-	--name node \
-	--mount type=bind,source=$(HOME)/node_data,target=/var/data \
-	helium/node
+	docker build . --build-arg network=$(NETWORK) -t blockchain-node:$(NETWORK)-local
 
 docker-stop:
-	docker stop node
+	docker stop node-${NETWORK}-local
+
+docker-remove: docker-stop
+	docker rm node-${NETWORK}-local
+
+docker-run: docker-remove
+	mkdir -p "/tmp/$(NETWORK)_node_data"
+	docker run -it \
+	  --name node-${NETWORK}-local \
+	  --init \
+	  --publish 4467:4467 \
+	  --mount type=bind,source=/tmp/$(NETWORK)_node_data,target=/var/data \
+	blockchain-node:$(NETWORK)-local
 
 docs:
 	$(MAKE) -C docs

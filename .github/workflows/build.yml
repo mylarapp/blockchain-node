@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [ mylar ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        network: ['mainnet', 'testnet']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Preparation
+        id: prep
+        run: |
+          TAGS="${{ matrix.network }}-${{ github.sha }}"
+          TAGS="$TAGS,${{ matrix.network }}-latest"
+          echo ::set-output name=tags::${TAGS}
+
+      - uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+          registry: ghcr.io
+          image_name: ${{ github.repository }}
+          image_tag: ${{ steps.prep.outputs.tags }}
+          build_extra_args: " --build-arg network=${{ matrix.network }}"
+          stages_image_name: ${{ github.repository }}-${{ matrix.network }}-stages
